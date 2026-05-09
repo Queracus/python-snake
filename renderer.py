@@ -19,10 +19,20 @@ class Renderer:
 
     def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50):
         self.clear()
+        self._render_grid_boundary()
         self._render_obstacles(obstacles)
         self._render_food(food)
         self._render_snake(snake)
         self._render_hud(score, level, goal)
+
+    def _render_grid_boundary(self):
+        width = int(self.canvas.cget("width"))
+        height = int(self.canvas.cget("height"))
+        grid_color = "#222222"
+        for x in range(0, width + 1, self.cell_size):
+            self.canvas.create_line(x, 0, x, height, fill=grid_color)
+        for y in range(0, height + 1, self.cell_size):
+            self.canvas.create_line(0, y, width, y, fill=grid_color)
 
     def _render_snake(self, snake: Snake):
         for pos in snake.positions:

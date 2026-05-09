@@ -57,6 +57,7 @@ A local desktop snake game using Python's Tkinter library with:
 - Level displayed as text on canvas
 - Grid uses cell_size=20 pixels per cell
 - Canvas width/height = grid_width * cell_size, grid_height * cell_size
+- **Grid boundary drawn as subtle grid lines (#222222)** so players can identify wall positions
 
 **Main Game Loop:**
 - Uses `root.after(tick_rate, callback)` for tick-based animation
