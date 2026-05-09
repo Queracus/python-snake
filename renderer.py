@@ -17,12 +17,12 @@ class Renderer:
         self._score_text_id = None
         self._level_text_id = None
 
-    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int):
+    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50):
         self.clear()
         self._render_obstacles(obstacles)
         self._render_food(food)
         self._render_snake(snake)
-        self._render_hud(score, level)
+        self._render_hud(score, level, goal)
 
     def _render_snake(self, snake: Snake):
         for pos in snake.positions:
@@ -59,7 +59,7 @@ class Renderer:
                 outline="#444444"
             )
 
-    def _render_hud(self, score: int, level: int):
+    def _render_hud(self, score: int, level: int, goal: int = 50):
         self.canvas.create_text(
             10, 10,
             text=f"Score: {score}",
@@ -74,6 +74,13 @@ class Renderer:
             anchor="nw",
             font=("Arial", 12, "bold")
         )
+        self.canvas.create_text(
+            10, 50,
+            text=f"Goal: {goal}",
+            fill="#aaaaaa",
+            anchor="nw",
+            font=("Arial", 10)
+        )
 
     def render_game_over(self, score: int):
         self.canvas.create_text(
@@ -81,6 +88,16 @@ class Renderer:
             self.canvas.winfo_height() // 2,
             text=f"GAME OVER\nScore: {score}\nPress R to Restart",
             fill="white",
+            font=("Arial", 24, "bold"),
+            justify="center"
+        )
+
+    def render_level_complete(self, level: int):
+        self.canvas.create_text(
+            self.canvas.winfo_width() // 2,
+            self.canvas.winfo_height() // 2,
+            text=f"LEVEL {level} COMPLETE!\nPress R for Next Level",
+            fill="#00ff00",
             font=("Arial", 24, "bold"),
             justify="center"
         )

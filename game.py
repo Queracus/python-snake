@@ -6,16 +6,16 @@ from renderer import Renderer
 
 
 LEVEL_CONFIG = {
-    1: {"tick": 150, "obstacles": 0},
-    2: {"tick": 140, "obstacles": 2},
-    3: {"tick": 130, "obstacles": 4},
-    4: {"tick": 120, "obstacles": 6},
-    5: {"tick": 110, "obstacles": 8},
-    6: {"tick": 100, "obstacles": 10},
-    7: {"tick": 90, "obstacles": 12},
-    8: {"tick": 80, "obstacles": 14},
-    9: {"tick": 70, "obstacles": 16},
-    10: {"tick": 60, "obstacles": 18},
+    1: {"tick": 150, "obstacles": 0, "goal": 50},
+    2: {"tick": 140, "obstacles": 2, "goal": 60},
+    3: {"tick": 130, "obstacles": 4, "goal": 70},
+    4: {"tick": 120, "obstacles": 6, "goal": 80},
+    5: {"tick": 110, "obstacles": 8, "goal": 90},
+    6: {"tick": 100, "obstacles": 10, "goal": 100},
+    7: {"tick": 90, "obstacles": 12, "goal": 110},
+    8: {"tick": 80, "obstacles": 14, "goal": 120},
+    9: {"tick": 70, "obstacles": 16, "goal": 130},
+    10: {"tick": 60, "obstacles": 18, "goal": 140},
 }
 
 
@@ -23,6 +23,7 @@ class GameState(Enum):
     MENU = auto()
     PLAYING = auto()
     PAUSED = auto()
+    LEVEL_COMPLETE = auto()
     GAME_OVER = auto()
 
 
@@ -127,24 +128,44 @@ class Game:
         self.snake.move()
         self.check_collisions()
         self.handle_eat()
+
+        if self.state == GameState.GAME_OVER:
+            self._render_game_over()
+            return
+
+        if self.check_level_complete():
+            self.state = GameState.LEVEL_COMPLETE
+            self._render_level_complete()
+            return
+
         self._render()
 
         if self.state == GameState.PLAYING:
             self.root.after(self.tick_rate, self._game_loop)
-        elif self.state == GameState.GAME_OVER:
-            self._render_game_over()
 
     def _render(self):
         if self.snake and self.food and self.obstacles:
-            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level)
+            goal = LEVEL_CONFIG[self.level]["goal"]
+            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal)
 
     def _render_game_over(self):
         self.renderer.render_game_over(self.score)
 
+    def _render_level_complete(self):
+        self.renderer.render_level_complete(self.level)
+
     def _on_key_press(self, event):
-        if self.state != GameState.PLAYING:
+        if self.state == GameState.GAME_OVER:
             if event.keysym == "r" or event.keysym == "R":
                 self.restart()
+            return
+
+        if self.state == GameState.LEVEL_COMPLETE:
+            if event.keysym == "r" or event.keysym == "R":
+                self.next_level()
+            return
+
+        if self.state != GameState.PLAYING:
             return
 
         from controls import map_key_to_direction
@@ -153,6 +174,12 @@ class Game:
         direction = map_key_to_direction(event.keysym, self.control_scheme)
         if direction:
             self.snake.change_direction(direction)
+
+    def next_level(self):
+        if self.level < 10:
+            self.start_level(self.level + 1)
+        else:
+            self.show_menu()
 
     def restart(self):
         if hasattr(self, 'menu') and self.menu:
@@ -194,6 +221,10 @@ class Game:
                 grid_height=self.grid.height,
                 snake_positions=self.snake.positions
             )
+
+    def check_level_complete(self) -> bool:
+        goal = LEVEL_CONFIG[self.level]["goal"]
+        return self.score >= goal
 
     def start(self):
         self.show_menu()
