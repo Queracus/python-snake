@@ -131,42 +131,35 @@ Test external behavior only (not internal state).
 **Implementation Decisions:**
 
 **Grid Resizing:**
-- `Grid` dataclass in `game.py` currently has fixed `width=20`, `height=20`, `cell_size=20`
-- Grid width and height become dynamic, read from current window size divided by `cell_size` (always 20)
+- `Grid` dataclass holds current `width` and `height` (in cells), plus fixed `cell_size=20`
 - `Grid.canvas_width` and `Grid.canvas_height` derive from `width * cell_size` and `height * cell_size`
-- Grid expands in both dimensions to fill window — cells may be non-square if window is not square
+- Grid expands in width direction to fill window — cell count scales with window width
 - No maximum grid size
 
-**Minimum Size Tracking:**
-- `Game` class holds `min_width` and `min_height` (in cells)
-- Minimum is set to `ceil(window_size / cell_size)` at level start
-- On `LEVEL_COMPLETE` state, any resize updates the minimum immediately
-- On new game (menu Start), minimum resets to `ceil(400 / 20) = 20` (base grid)
-- On restart within a level, minimum stays as-is
-
-**Deferred Resize:**
-- `<Configure>` event on root window is bound to capture resize events
-- During PLAYING state, resize events are recorded in `pending_min_width`, `pending_min_height` — not applied immediately
-- Pending resize is applied at: level start, level complete screen, or next tick where state != PLAYING
+**Resize Mechanism:**
+- `<Configure>` event on root window records `target_canvas_width` — nothing else
+- At the start of each `_game_loop()` tick, `_expand_grid_if_needed()` checks if `target_canvas_width` would produce a larger grid
+- If larger, grid width is updated and canvas is resized
+- Grid only expands, never shrinks
 
 **Snake Start Position:**
-- `Snake.__init__` receives the grid dimensions and spawns snake at a random position within valid grid cells
+- `Snake._reset()` spawns snake at a random position within valid grid cells, pointing LEFT
 - `Obstacles.create` uses the current grid dimensions when spawning
 - `Food.create` uses the current grid dimensions when spawning
 
 **Rendering:**
-- `Renderer` reads canvas dimensions via `canvas.winfo_width()` / `canvas.winfo_height()` each render
-- Canvas size itself is updated by Tkinter geometry manager based on window
+- Canvas uses `fill=tk.BOTH, expand=True` — fills window in both dimensions
 - HUD position stays fixed at pixel coordinates (10, 10) etc., not tied to grid
+- `Renderer` reads canvas dimensions via `canvas.winfo_width()` each render
 
 **Game States affected:**
-- `MENU`: resize has no effect on grid
-- `PLAYING`: resize is deferred (stored, applied on next non-playing state)
-- `GAME_OVER`: resize is deferred
-- `LEVEL_COMPLETE`: resize updates minimum immediately (implicit)
+- `MENU`: resize recorded but not applied
+- `PLAYING`: resize deferred, applied at start of next tick via `_expand_grid_if_needed()`
+- `GAME_OVER`: same as PLAYING (deferred via tick)
+- `LEVEL_COMPLETE`: `_expand_grid_if_needed()` called in `_render_level_complete()`
 
 **Out of Scope:**
-- Shrinking the grid (grid only expands, never shrinks below current minimum)
+- Shrinking the grid (grid only expands, never shrinks)
 - Persisting window size across sessions
 - Scaling the HUD (HUD stays same pixel size regardless of grid)
 - Changing cell_size from 20
