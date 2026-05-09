@@ -29,12 +29,12 @@ class Snake:
     def _reset(self):
         max_start_x = self.grid_width - 3
         max_start_y = self.grid_height - 1
-        start_x = random.randint(0, max_start_x)
+        start_x = random.randint(2, max_start_x)
         start_y = random.randint(0, max_start_y)
         self.positions = [
             Position(start_x, start_y),
-            Position(start_x + 1, start_y),
-            Position(start_x + 2, start_y),
+            Position(start_x - 1, start_y),
+            Position(start_x - 2, start_y),
         ]
         self.direction = Direction.RIGHT
         self.pending_direction = None
