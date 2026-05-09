@@ -2,14 +2,17 @@ import pytest
 from snake import Snake, Direction, Position
 
 
-def test_snake_initial_position():
-    snake = Snake(grid_width=20, grid_height=20)
-    cx, cy = 10, 10
+def test_snake_spawns_within_grid():
+    """Snake should spawn at a random position within the grid bounds."""
+    snake = Snake(grid_width=30, grid_height=25)
 
     assert len(snake.positions) == 3
-    assert snake.positions[0] == Position(cx, cy)
-    assert snake.positions[1] == Position(cx - 1, cy)
-    assert snake.positions[2] == Position(cx - 2, cy)
+    for pos in snake.positions:
+        assert 0 <= pos.x < 30, f"x={pos.x} out of bounds [0, 30)"
+        assert 0 <= pos.y < 25, f"y={pos.y} out of bounds [0, 25)"
+    head = snake.positions[0]
+    assert abs(snake.positions[1].x - head.x) + abs(snake.positions[1].y - head.y) == 1
+    assert abs(snake.positions[2].x - snake.positions[1].x) + abs(snake.positions[2].y - snake.positions[1].y) == 1
 
 
 def test_snake_initial_direction():
@@ -19,10 +22,12 @@ def test_snake_initial_direction():
 
 def test_snake_move_forward():
     snake = Snake()
+    snake.direction = Direction.RIGHT
+    initial_x = snake.positions[0].x
     snake.move()
 
     head = snake.positions[0]
-    assert head.x == 11
+    assert head.x == initial_x + 1
 
 
 def test_snake_change_direction():

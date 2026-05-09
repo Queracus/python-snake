@@ -32,6 +32,28 @@ class Grid:
     width: int = 20
     height: int = 20
     cell_size: int = 20
+    _min_width: int = 20
+    _min_height: int = 20
+
+    def __post_init__(self):
+        self._min_width = self.width
+        self._min_height = self.height
+
+    @property
+    def min_width(self) -> int:
+        return self._min_width
+
+    @min_width.setter
+    def min_width(self, value: int):
+        self._min_width = value
+
+    @property
+    def min_height(self) -> int:
+        return self._min_height
+
+    @min_height.setter
+    def min_height(self, value: int):
+        self._min_height = value
 
     @property
     def canvas_width(self) -> int:
@@ -40,6 +62,10 @@ class Grid:
     @property
     def canvas_height(self) -> int:
         return self.height * self.cell_size
+
+    def recompute(self, canvas_width: int, canvas_height: int):
+        self.width = max(self._min_width, canvas_width // self.cell_size)
+        self.height = max(self._min_height, canvas_height // self.cell_size)
 
 
 class Game:
@@ -57,15 +83,19 @@ class Game:
         self.running = False
         self.menu = None
         self.death_cause = ""
+        self._pending_width = None
+        self._pending_height = None
 
         self._setup_window()
         self._create_canvas()
+        self._apply_pending_resize()
 
     def _setup_window(self):
         self.root.title("Snake")
         self.root.geometry("600x600")
         self.root.resizable(True, True)
         self.root.bind("<Key>", self._on_key_press)
+        self.root.bind("<Configure>", self._on_resize)
 
     def _create_canvas(self):
         self.canvas = tk.Canvas(
@@ -77,9 +107,39 @@ class Game:
         self.canvas.pack(fill=tk.BOTH, expand=False)
         self.renderer = Renderer(self.canvas, self.grid.cell_size)
 
+    def _on_resize(self, event):
+        if event.width == 1 and event.height == 1:
+            return
+        self._pending_width = event.width
+        self._pending_height = event.height
+        if self.state != GameState.PLAYING and self.state != GameState.GAME_OVER:
+            self._apply_pending_resize()
+
+    def _apply_pending_resize(self):
+        if self._pending_width is None:
+            return
+
+        if self.state == GameState.PLAYING or self.state == GameState.GAME_OVER:
+            return
+
+        canvas_w = self._pending_width
+        canvas_h = self._pending_height
+        self._pending_width = None
+        self._pending_height = None
+
+        self.grid.min_width = canvas_w // self.grid.cell_size
+        self.grid.min_height = canvas_h // self.grid.cell_size
+        self.grid.recompute(canvas_w, canvas_h)
+
     def show_menu(self):
         from menu import create_menu
 
+        self._pending_width = None
+        self._pending_height = None
+        self.grid.min_width = 20
+        self.grid.min_height = 20
+        self.grid.recompute(400, 400)
+        self.canvas.config(width=400, height=400)
         self.canvas.pack_forget()
         self.menu = create_menu(self.root, self.on_start_game)
         self.menu.show()
@@ -93,6 +153,13 @@ class Game:
         from snake import Snake
         from food import Food
         from obstacles import Obstacles
+
+        if self._pending_width is not None:
+            self.grid.min_width = self._pending_width // self.grid.cell_size
+            self.grid.min_height = self._pending_height // self.grid.cell_size
+            self.grid.recompute(self._pending_width, self._pending_height)
+            self._pending_width = None
+            self._pending_height = None
 
         self.level = level
         self.score = 0
@@ -121,7 +188,9 @@ class Game:
         if not self.menu:
             return
         self.menu.hide()
-        self.canvas.pack(fill=tk.BOTH, expand=False)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.root.update_idletasks()
+        self._apply_pending_resize()
 
     def _game_loop(self):
         if not self.running or self.state != GameState.PLAYING:
@@ -147,13 +216,16 @@ class Game:
 
     def _render(self):
         if self.snake and self.food and self.obstacles:
+            self._apply_pending_resize()
             goal = LEVEL_CONFIG[self.level]["goal"]
             self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal)
 
     def _render_game_over(self):
+        self._apply_pending_resize()
         self.renderer.render_game_over(self.score, self.death_cause)
 
     def _render_level_complete(self):
+        self._apply_pending_resize()
         self.renderer.render_level_complete(self.level)
 
     def _on_key_press(self, event):

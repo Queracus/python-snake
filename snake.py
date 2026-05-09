@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 from enum import Enum, auto
+import random
 
 
 class Direction(Enum):
@@ -26,11 +27,14 @@ class Snake:
         self._reset()
 
     def _reset(self):
-        cx, cy = self.grid_width // 2, self.grid_height // 2
+        max_start_x = self.grid_width - 3
+        max_start_y = self.grid_height - 1
+        start_x = random.randint(0, max_start_x)
+        start_y = random.randint(0, max_start_y)
         self.positions = [
-            Position(cx, cy),
-            Position(cx - 1, cy),
-            Position(cx - 2, cy),
+            Position(start_x, start_y),
+            Position(start_x + 1, start_y),
+            Position(start_x + 2, start_y),
         ]
         self.direction = Direction.RIGHT
         self.pending_direction = None

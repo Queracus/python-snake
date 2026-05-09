@@ -8,6 +8,8 @@ def test_grid_boundary_visible_on_render():
     root = tk.Tk()
     root.withdraw()
     canvas = tk.Canvas(root, width=400, height=400, bg="black")
+    canvas.pack()
+    root.update()
     renderer = Renderer(canvas, cell_size=20)
 
     from snake import Snake

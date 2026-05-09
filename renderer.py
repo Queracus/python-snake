@@ -26,13 +26,17 @@ class Renderer:
         self._render_hud(score, level, goal)
 
     def _render_grid_boundary(self):
-        width = int(self.canvas.cget("width"))
-        height = int(self.canvas.cget("height"))
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        if w < 10:
+            w = int(self.canvas.cget("width"))
+        if h < 10:
+            h = int(self.canvas.cget("height"))
         grid_color = "#222222"
-        for x in range(0, width + 1, self.cell_size):
-            self.canvas.create_line(x, 0, x, height, fill=grid_color)
-        for y in range(0, height + 1, self.cell_size):
-            self.canvas.create_line(0, y, width, y, fill=grid_color)
+        for x in range(0, w + 1, self.cell_size):
+            self.canvas.create_line(x, 0, x, h, fill=grid_color)
+        for y in range(0, h + 1, self.cell_size):
+            self.canvas.create_line(0, y, w, y, fill=grid_color)
 
     def _render_snake(self, snake: Snake):
         for pos in snake.positions:

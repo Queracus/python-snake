@@ -109,6 +109,70 @@ Test external behavior only (not internal state).
 - Controls selectable in menu, persists for game session
 - Resizable window via Tkinter geometry manager (fixed canvas content)
 
+## Enhancement #12 - Dynamic Grid Resizing
+
+**Problem:** When the window is resized, the play area remains fixed (20x20 cells, 400x400 canvas), leaving black bars on the right and bottom. Players want the game area to fill the window.
+
+**Solution:** The grid expands to fill the window. Cell size stays fixed at 20px. Grid width/height (in cells) adjusts based on window size. Minimum grid size is determined by window size at level start and level complete.
+
+**User Stories:**
+
+1. As a player, I want the play area to fill my window when I resize, so that I can use my full screen
+2. As a player, I want the grid to expand in both directions (width and height), so that the play area fills the window fully
+3. As a player, I want the minimum grid size to be set when I start a level, so that the minimum is based on my current window size
+4. As a player, I want the minimum grid size to be updated when I resize on the level complete screen, so that the next level adapts to my window
+5. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments (level start, level complete)
+6. As a player, I want the minimum to reset when starting a new game from the menu, so that each session starts fresh
+7. As a player, I want restarts within a level to keep the current minimum, so that I can retry without the grid changing
+8. As a player, I want the HUD to stay visible and readable, so that I can always see score and level
+9. As a player, I want the snake to start at a random position when the grid expands, so that gameplay feels fresh each level
+10. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
+
+**Implementation Decisions:**
+
+**Grid Resizing:**
+- `Grid` dataclass in `game.py` currently has fixed `width=20`, `height=20`, `cell_size=20`
+- Grid width and height become dynamic, read from current window size divided by `cell_size` (always 20)
+- `Grid.canvas_width` and `Grid.canvas_height` derive from `width * cell_size` and `height * cell_size`
+- Grid expands in both dimensions to fill window — cells may be non-square if window is not square
+- No maximum grid size
+
+**Minimum Size Tracking:**
+- `Game` class holds `min_width` and `min_height` (in cells)
+- Minimum is set to `ceil(window_size / cell_size)` at level start
+- On `LEVEL_COMPLETE` state, any resize updates the minimum immediately
+- On new game (menu Start), minimum resets to `ceil(400 / 20) = 20` (base grid)
+- On restart within a level, minimum stays as-is
+
+**Deferred Resize:**
+- `<Configure>` event on root window is bound to capture resize events
+- During PLAYING state, resize events are recorded in `pending_min_width`, `pending_min_height` — not applied immediately
+- Pending resize is applied at: level start, level complete screen, or next tick where state != PLAYING
+
+**Snake Start Position:**
+- `Snake.__init__` receives the grid dimensions and spawns snake at a random position within valid grid cells
+- `Obstacles.create` uses the current grid dimensions when spawning
+- `Food.create` uses the current grid dimensions when spawning
+
+**Rendering:**
+- `Renderer` reads canvas dimensions via `canvas.winfo_width()` / `canvas.winfo_height()` each render
+- Canvas size itself is updated by Tkinter geometry manager based on window
+- HUD position stays fixed at pixel coordinates (10, 10) etc., not tied to grid
+
+**Game States affected:**
+- `MENU`: resize has no effect on grid
+- `PLAYING`: resize is deferred (stored, applied on next non-playing state)
+- `GAME_OVER`: resize is deferred
+- `LEVEL_COMPLETE`: resize updates minimum immediately (implicit)
+
+**Out of Scope:**
+- Shrinking the grid (grid only expands, never shrinks below current minimum)
+- Persisting window size across sessions
+- Scaling the HUD (HUD stays same pixel size regardless of grid)
+- Changing cell_size from 20
+
+---
+
 ## Bug Fix #11 - Self-collision from rapid key presses
 
 **Problem:** When player presses two direction keys quickly before a tick (e.g., DOWN then LEFT), the snake turns into its own body.
