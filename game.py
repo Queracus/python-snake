@@ -1,6 +1,21 @@
 import tkinter as tk
 from dataclasses import dataclass
 from enum import Enum, auto
+from controls import ControlScheme
+
+
+LEVEL_CONFIG = {
+    1: {"tick": 150, "obstacles": 0},
+    2: {"tick": 140, "obstacles": 2},
+    3: {"tick": 130, "obstacles": 4},
+    4: {"tick": 120, "obstacles": 6},
+    5: {"tick": 110, "obstacles": 8},
+    6: {"tick": 100, "obstacles": 10},
+    7: {"tick": 90, "obstacles": 12},
+    8: {"tick": 80, "obstacles": 14},
+    9: {"tick": 70, "obstacles": 16},
+    10: {"tick": 60, "obstacles": 18},
+}
 
 
 class GameState(Enum):
@@ -35,6 +50,7 @@ class Game:
         self.level = 1
         self.snake = None
         self.food = None
+        self.control_scheme = ControlScheme.ARROWS
 
         self._setup_window()
         self._create_canvas()
@@ -51,11 +67,23 @@ class Game:
             height=self.grid.canvas_height,
             bg="black"
         )
-        self.canvas.pack(fill=tk.BOTH, expand=False)
+
+    def show_menu(self):
+        from menu import create_menu
+
+        self.canvas.pack_forget()
+        self.menu = create_menu(self.root, self.on_start_game)
+        self.menu.show()
+
+    def on_start_game(self, level: int, control_scheme: ControlScheme):
+        self.level = level
+        self.control_scheme = control_scheme
+        self.start_level(level)
 
     def start_level(self, level: int):
         from snake import Snake
         from food import Food
+        from obstacles import Obstacles
 
         self.level = level
         self.score = 0
@@ -65,11 +93,15 @@ class Game:
             grid_height=self.grid.height,
             snake_positions=self.snake.positions
         )
+        obstacle_count = LEVEL_CONFIG[level]["obstacles"]
+        self.obstacles = Obstacles.create(
+            grid_width=self.grid.width,
+            grid_height=self.grid.height,
+            count=obstacle_count,
+            snake_positions=self.snake.positions
+        )
         self.state = GameState.PLAYING
-        self.tick_rate = self._get_tick_rate(level)
-
-    def _get_tick_rate(self, level: int) -> int:
-        return 160 - (level * 10)
+        self.tick_rate = LEVEL_CONFIG[level]["tick"]
 
     def check_collisions(self):
         if not self.snake:
@@ -86,6 +118,11 @@ class Game:
         if check_self_collision(self.snake.positions):
             self.state = GameState.GAME_OVER
             return
+
+        if hasattr(self, 'obstacles') and self.obstacles:
+            if self.obstacles.check_collision(head):
+                self.state = GameState.GAME_OVER
+                return
 
     def handle_eat(self):
         if not self.snake or not self.food:
