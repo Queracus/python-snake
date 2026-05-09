@@ -56,6 +56,7 @@ class Game:
         self.control_scheme = ControlScheme.ARROWS
         self.running = False
         self.menu = None
+        self.death_cause = ""
 
         self._setup_window()
         self._create_canvas()
@@ -95,6 +96,7 @@ class Game:
 
         self.level = level
         self.score = 0
+        self.death_cause = ""
         self.snake = Snake(grid_width=self.grid.width, grid_height=self.grid.height)
         self.food = Food.create(
             grid_width=self.grid.width,
@@ -149,7 +151,7 @@ class Game:
             self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal)
 
     def _render_game_over(self):
-        self.renderer.render_game_over(self.score)
+        self.renderer.render_game_over(self.score, self.death_cause)
 
     def _render_level_complete(self):
         self.renderer.render_level_complete(self.level)
@@ -197,15 +199,18 @@ class Game:
 
         if check_wall_collision(head, self.grid.width, self.grid.height):
             self.state = GameState.GAME_OVER
+            self.death_cause = "You hit the wall!"
             return
 
         if check_self_collision(self.snake.positions):
             self.state = GameState.GAME_OVER
+            self.death_cause = "You hit yourself!"
             return
 
         if self.obstacles:
             if self.obstacles.check_collision(head):
                 self.state = GameState.GAME_OVER
+                self.death_cause = "You hit an obstacle!"
                 return
 
     def handle_eat(self):

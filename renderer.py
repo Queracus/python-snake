@@ -82,11 +82,16 @@ class Renderer:
             font=("Arial", 10)
         )
 
-    def render_game_over(self, score: int):
+    def render_game_over(self, score: int, cause: str = ""):
+        if cause:
+            message = f"GAME OVER\n{cause}\nScore: {score}\nPress R to Restart"
+        else:
+            message = f"GAME OVER\nScore: {score}\nPress R to Restart"
+        
         self.canvas.create_text(
             self.canvas.winfo_width() // 2,
             self.canvas.winfo_height() // 2,
-            text=f"GAME OVER\nScore: {score}\nPress R to Restart",
+            text=message,
             fill="white",
             font=("Arial", 24, "bold"),
             justify="center"

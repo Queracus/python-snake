@@ -107,3 +107,20 @@ Test external behavior only (not internal state).
 - Level jump starts at selected level, same starting snake size
 - Controls selectable in menu, persists for game session
 - Resizable window via Tkinter geometry manager (fixed canvas content)
+
+## Bug Fix #11 - Self-collision from rapid key presses
+
+**Problem:** When player presses two direction keys quickly before a tick (e.g., DOWN then LEFT), the snake turns into its own body.
+
+**Fix:** Implemented queued direction system in `snake.py`:
+- `pending_direction` stores queued input
+- Only one direction change processed per tick
+
+## Enhancement #9 - Better collision feedback
+
+**Problem:** Game shows generic "GAME OVER" without explaining why.
+
+**Fix:** Display cause of death:
+- "You hit the wall!"
+- "You hit an obstacle!"
+- "You hit yourself!"
