@@ -31,6 +31,10 @@ class Game:
         self.state = GameState.MENU
         self.grid = Grid()
         self.tick_rate = 150
+        self.score = 0
+        self.level = 1
+        self.snake = None
+        self.food = None
 
         self._setup_window()
         self._create_canvas()
@@ -48,6 +52,54 @@ class Game:
             bg="black"
         )
         self.canvas.pack(fill=tk.BOTH, expand=False)
+
+    def start_level(self, level: int):
+        from snake import Snake
+        from food import Food
+
+        self.level = level
+        self.score = 0
+        self.snake = Snake(grid_width=self.grid.width, grid_height=self.grid.height)
+        self.food = Food.create(
+            grid_width=self.grid.width,
+            grid_height=self.grid.height,
+            snake_positions=self.snake.positions
+        )
+        self.state = GameState.PLAYING
+        self.tick_rate = self._get_tick_rate(level)
+
+    def _get_tick_rate(self, level: int) -> int:
+        return 160 - (level * 10)
+
+    def check_collisions(self):
+        if not self.snake:
+            return
+
+        head = self.snake.positions[0]
+
+        from game_logic import check_wall_collision, check_self_collision, check_food_collision
+
+        if check_wall_collision(head, self.grid.width, self.grid.height):
+            self.state = GameState.GAME_OVER
+            return
+
+        if check_self_collision(self.snake.positions):
+            self.state = GameState.GAME_OVER
+            return
+
+    def handle_eat(self):
+        if not self.snake or not self.food:
+            return
+
+        from game_logic import check_food_collision
+        if check_food_collision(self.snake.positions[0], self.food.position):
+            self.score += self.food.eat()
+            self.snake.positions.append(self.snake.positions[-1])
+            self.food.respawn(
+                grid_width=self.grid.width,
+                grid_height=self.grid.height,
+                snake_positions=self.snake.positions
+            )
 
     def start(self):
         self.root.mainloop()
