@@ -28,6 +28,7 @@ def test_snake_move_forward():
 def test_snake_change_direction():
     snake = Snake()
     snake.change_direction(Direction.UP)
+    snake.move()
     assert snake.direction == Direction.UP
 
 
@@ -35,10 +36,25 @@ def test_snake_cannot_reverse():
     snake = Snake()
     snake.direction = Direction.RIGHT
     snake.change_direction(Direction.LEFT)
+    snake.move()
     assert snake.direction == Direction.RIGHT
 
     snake.change_direction(Direction.DOWN)
+    snake.move()
     assert snake.direction == Direction.DOWN
+
+
+def test_snake_queued_direction_applied():
+    snake = Snake()
+    snake.direction = Direction.RIGHT
+
+    snake.change_direction(Direction.DOWN)
+    snake.move()
+    assert snake.direction == Direction.DOWN
+
+    snake.change_direction(Direction.LEFT)
+    snake.move()
+    assert snake.direction == Direction.LEFT
 
 
 def test_snake_change_to_same_is_ok():

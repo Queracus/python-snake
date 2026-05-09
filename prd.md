@@ -63,6 +63,8 @@ A local desktop snake game using Python's Tkinter library with:
 - Each tick: move snake → check collisions → handle eat → render
 - Initial tick rate: 150ms (level 1)
 - Tick rate decreases with level (60ms at level 10)
+- **Direction input is queued** - only one direction change per tick to prevent self-collision
+- Rapid key presses before a tick are stored in `pending_direction` and applied on next tick
 
 **Level Configuration:**
 - Level 1: 150ms tick, 0 obstacles

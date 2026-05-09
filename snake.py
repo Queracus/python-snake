@@ -21,6 +21,7 @@ class Snake:
         self.grid_width = grid_width
         self.grid_height = grid_height
         self.direction = Direction.RIGHT
+        self.pending_direction: Direction | None = None
         self.positions: List[Position] = []
         self._reset()
 
@@ -32,13 +33,29 @@ class Snake:
             Position(cx - 2, cy),
         ]
         self.direction = Direction.RIGHT
+        self.pending_direction = None
 
     def move(self):
+        # Apply pending direction if any (only one change per tick)
+        if self.pending_direction:
+            if self._is_valid_direction(self.pending_direction):
+                self.direction = self.pending_direction
+            self.pending_direction = None
+
         head = self.positions[0]
         dx, dy = self._direction_delta()
         new_head = Position(head.x + dx, head.y + dy)
         self.positions.insert(0, new_head)
         self.positions.pop()
+
+    def _is_valid_direction(self, new_direction: Direction) -> bool:
+        reverses = {
+            Direction.UP: Direction.DOWN,
+            Direction.DOWN: Direction.UP,
+            Direction.LEFT: Direction.RIGHT,
+            Direction.RIGHT: Direction.LEFT,
+        }
+        return new_direction != reverses.get(self.direction)
 
     def _direction_delta(self) -> Tuple[int, int]:
         if self.direction == Direction.UP:
@@ -52,11 +69,6 @@ class Snake:
         return (1, 0)
 
     def change_direction(self, new_direction: Direction):
-        reverses = {
-            Direction.UP: Direction.DOWN,
-            Direction.DOWN: Direction.UP,
-            Direction.LEFT: Direction.RIGHT,
-            Direction.RIGHT: Direction.LEFT,
-        }
-        if new_direction != reverses.get(self.direction):
-            self.direction = new_direction
+        # Queue direction change - will be applied on next move
+        if self._is_valid_direction(new_direction):
+            self.pending_direction = new_direction
