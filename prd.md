@@ -30,6 +30,11 @@ A local desktop snake game using Python's Tkinter library with:
 11. As a player, I want to grow the snake by eating food, so that I progress in the game
 12. As a player, I want to control direction with arrow keys, so that I can play
 13. As a player, I want to control direction with WASD, so that I can play
+14. As a player, I want to see the snake rendered on screen, so that I can play
+15. As a player, I want to see food rendered on screen, so that I know where to move
+16. As a player, I want to see obstacles rendered on screen, so that I can avoid them
+17. As a player, I want the snake to move automatically, so that gameplay is continuous
+18. As a player, I want to control direction with keyboard, so that I can change course
 
 ## Implementation Decisions
 
@@ -41,6 +46,23 @@ A local desktop snake game using Python's Tkinter library with:
 - `food.py` — Food entity (random placement, collision detection)
 - `obstacle.py` — Obstacle entity (per-level generation, collision)
 - `controls.py` — Input handling (key binding for arrows + WASD)
+- `renderer.py` — Canvas rendering (snake, food, obstacles, score display)
+- `game_loop.py` — Main game loop with tick timing
+
+**Rendering System:**
+- Snake drawn as connected rectangles (green segments)
+- Food drawn as red square
+- Obstacles drawn as gray/brown squares
+- Score displayed as text on canvas
+- Level displayed as text on canvas
+- Grid uses cell_size=20 pixels per cell
+- Canvas width/height = grid_width * cell_size, grid_height * cell_size
+
+**Main Game Loop:**
+- Uses `root.after(tick_rate, callback)` for tick-based animation
+- Each tick: move snake → check collisions → handle eat → render
+- Initial tick rate: 150ms (level 1)
+- Tick rate decreases with level (60ms at level 10)
 
 **Level Configuration:**
 - Level 1: 150ms tick, 0 obstacles
