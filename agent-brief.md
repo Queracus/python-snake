@@ -16,19 +16,20 @@ Fully playable Snake game with 10 levels. Run with `python3 game.py`.
 | #6 | Main Menu |
 | #7 | Levels + Obstacles |
 | #8 | Rendering + Game Loop |
-| #9 | Game ends abruptly (new - needs work) |
-| #10 | Level progression (implemented, not fully tested) |
+| #9 | Game ends abruptly (needs work) |
+| #10 | Level progression |
+| #11 | Self-collision bug (FIXED) |
 
 ## Known Issues
 
 ### #9 - Game ends abruptly without feedback
 - **Problem:** Players die without understanding why
-- **Status:** Needs work
+- **Status:** Needs more work
 - **Suggestion:** Add visual feedback when hitting wall/obstacle
 
-### #10 - Level progression
-- **Status:** Implemented but needs testing
-- **Fix in:** commit 5f2f9d0
+### #11 - Self-collision from rapid key presses (FIXED)
+- **Status:** Fixed in commit 3e10328
+- **Fix:** Direction input is now queued - only one per tick
 
 ## Level Config
 
