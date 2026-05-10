@@ -133,6 +133,23 @@ Test external behavior only (not internal state).
 - Persisting window size across sessions
 - HUD scaling
 
+## Features Implemented
+
+### Feature #19 — Special Food (Bonus Food)
+
+**Problem:** Only one food type existed (10 points, +1 growth). Players wanted bonus food for extra challenge and rewards.
+
+**Solution:** Added a second food type with different behavior:
+- Spawns every ~8 seconds (±1 second real-time)
+- Yellow colored (same size as normal food)
+- Visible for ~15 squares of travel time (tick count adjusted per level for constant real-time)
+- Maximum 2 on board simultaneously
+- +30 points and +2 snake growth when collected
+- Does not spawn on same position as normal food or snake
+- When collected, next spawn waits for normal 8s interval (no immediate replacement)
+
+---
+
 ## Historical Bug Fixes
 
 ### Bug Fix #11 — Self-collision from rapid key presses
