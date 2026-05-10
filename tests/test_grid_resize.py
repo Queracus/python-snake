@@ -100,3 +100,25 @@ def test_grid_adapts_to_window_after_game_over():
     assert game.grid.height >= 30  # 600 // 20 = 30
 
     root.destroy()
+
+
+def test_grid_minimum_enforced_at_20():
+    """Grid should never go below 20x20 even with small window."""
+    root = tk.Tk()
+    root.geometry("300x300")  # 300 // 20 = 15 cells (below 20)
+    root.update()
+
+    game = Game(root)
+    game.show_menu()
+    game.on_start_game(1, game.control_scheme)
+    root.update()
+
+    # Simulate resize to very small window
+    game._on_resize(type('Event', (), {'width': 300, 'height': 300})())
+    game._expand_grid_if_needed()
+
+    # Grid should stay at minimum 20
+    assert game.grid.width >= 20
+    assert game.grid.height >= 20
+
+    root.destroy()

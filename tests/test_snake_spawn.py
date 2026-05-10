@@ -23,3 +23,14 @@ def test_snake_stays_in_bounds_after_one_move():
             f"x={head.x} out of bounds [0, {snake.grid_width})"
         assert 0 <= head.y < snake.grid_height, \
             f"y={head.y} out of bounds [0, {snake.grid_height})"
+
+
+def test_snake_spawns_at_least_7_cells_from_wall():
+    """Snake head should spawn at least 7 cells from any wall."""
+    for _ in range(100):
+        snake = Snake(grid_width=20, grid_height=20)
+        head = snake.positions[0]
+        assert head.x >= 7, f"Head x={head.x} too close to left wall (min 7)"
+        assert head.x <= 20 - 8, f"Head x={head.x} too close to right wall (max 12)"
+        assert head.y >= 7, f"Head y={head.y} too close to top wall (min 7)"
+        assert head.y <= 20 - 8, f"Head y={head.y} too close to bottom wall (max 12)"

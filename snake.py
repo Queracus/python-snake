@@ -27,10 +27,11 @@ class Snake:
         self._reset()
 
     def _reset(self):
-        max_start_x = self.grid_width - 3
-        max_start_y = self.grid_height - 1
-        start_x = random.randint(2, max_start_x)
-        start_y = random.randint(0, max_start_y)
+        min_start = 7
+        max_start_x = self.grid_width - 8
+        max_start_y = self.grid_height - 8
+        start_x = random.randint(min_start, max_start_x)
+        start_y = random.randint(min_start, max_start_y)
         self.positions = [
             Position(start_x, start_y),
             Position(start_x - 1, start_y),

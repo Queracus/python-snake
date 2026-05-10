@@ -63,6 +63,8 @@ class Game:
         self.death_cause = ""
         self.target_canvas_width = 400
         self.target_canvas_height = 400
+        self.countdown_remaining = 0
+        self.countdown_timer = 0
 
         self._setup_window()
         self._create_canvas()
@@ -113,6 +115,7 @@ class Game:
         self.canvas.pack_forget()
         self.menu = create_menu(self.root, self.on_start_game)
         self.menu.show()
+        self.state = GameState.MENU
 
     def on_start_game(self, level: int, control_scheme: ControlScheme):
         self.level = level
@@ -176,7 +179,7 @@ class Game:
 
         if self.check_level_complete():
             self.state = GameState.LEVEL_COMPLETE
-            self._render_level_complete()
+            self._start_countdown()
             return
 
         self._render()
@@ -203,9 +206,7 @@ class Game:
             return
 
         if self.state == GameState.LEVEL_COMPLETE:
-            if event.keysym == "r" or event.keysym == "R":
-                self.next_level()
-            return
+            return  # Ignore all input during countdown (automatic)
 
         if self.state != GameState.PLAYING:
             return
@@ -222,6 +223,34 @@ class Game:
             self.start_level(self.level + 1)
         else:
             self.show_menu()
+
+    def _start_countdown(self):
+        self.countdown_remaining = 4
+        self.countdown_timer = 0
+        self._render_countdown()
+        self.root.after(self.tick_rate, lambda: self._tick_countdown())
+
+    def _tick_countdown(self):
+        self.countdown_timer += self.tick_rate
+        if self.countdown_timer >= 1000:
+            self.countdown_timer = 0
+            self.countdown_remaining -= 1
+
+            if self.countdown_remaining <= 0:
+                self.next_level()
+                return
+
+        if self.countdown_remaining > 0:
+            self._render_countdown()
+            self.root.after(self.tick_rate, lambda: self._tick_countdown())
+
+    def _render_countdown(self):
+        if self.level < 10:
+            message = f"Next level in {self.countdown_remaining}..."
+        else:
+            message = f"Returning to menu in {self.countdown_remaining}..."
+        self._expand_grid_if_needed()
+        self.renderer.render_countdown(message, self.level)
 
     def restart(self):
         if hasattr(self, 'menu') and self.menu:

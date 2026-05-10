@@ -134,3 +134,27 @@ class Renderer:
             font=("Arial", 24, "bold"),
             justify="center"
         )
+
+    def render_countdown(self, message: str, level: int):
+        self.clear()
+        self._render_grid_boundary()
+        if hasattr(self, '_score_text_id') and self._score_text_id:
+            self.canvas.delete(self._score_text_id)
+        if hasattr(self, '_level_text_id') and self._level_text_id:
+            self.canvas.delete(self._level_text_id)
+
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        if w < 10:
+            w = int(self.canvas.cget("width"))
+        if h < 10:
+            h = int(self.canvas.cget("height"))
+
+        self.canvas.create_text(
+            w // 2,
+            h // 2,
+            text=f"LEVEL {level} COMPLETE!\n{message}",
+            fill="#00ff00",
+            font=("Arial", 24, "bold"),
+            justify="center"
+        )
