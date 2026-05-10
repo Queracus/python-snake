@@ -16,6 +16,7 @@ A local desktop snake game using Python's Tkinter library with:
 - 10 difficulty levels with increasing speed and obstacles
 - Keyboard control schemes (arrows or WASD)
 - Resizable window with play area that adapts to window size (expands AND contracts)
+- Special bonus food that spawns periodically for extra points
 
 ## User Stories
 
@@ -43,12 +44,14 @@ A local desktop snake game using Python's Tkinter library with:
 17. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
 18. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments
 
-## Game States
+### Special Food
 
-- **MENU** — Main menu displayed, resize recorded but not applied
-- **PLAYING** — Active gameplay, resize deferred to next tick
-- **GAME_OVER** — Death screen, resize deferred to next tick
-- **LEVEL_COMPLETE** — "Press R for Next Level" shown, `_expand_grid_if_needed()` called here
+19. As a player, I want special food to spawn periodically, so that I can earn bonus points
+20. As a player, I want special food to be visually distinct (yellow), so that I can identify it quickly
+21. As a player, I want special food to disappear after a time limit, so that I have to act quickly
+22. As a player, I want special food to give more reward (30 points, +2 growth), so that it is worth chasing
+23. As a player, I want at most 2 special foods on board, so that the game does not get too easy
+24. As a player, I want special food timing to be consistent across levels in real-time, so that difficulty is fair
 
 ## Implementation Decisions
 
@@ -56,14 +59,14 @@ A local desktop snake game using Python's Tkinter library with:
 
 | Module | Responsibility |
 |--------|----------------|
-| `main.py` | Tkinter root window, app initialization |
-| `menu.py` | Main menu UI (Start button, Level Select, Control scheme) |
 | `game.py` | Game canvas, main loop, game state, resize handling |
+| `menu.py` | Main menu UI (Start button, Level Select, Control scheme) |
 | `snake.py` | Snake entity (position, movement, growth, self-collision) |
-| `food.py` | Food entity (random placement, collision detection) |
+| `food.py` | Food entities (normal + special food) |
 | `obstacle.py` | Obstacle entity (per-level generation, collision) |
 | `controls.py` | Input handling (key binding for arrows + WASD) |
-| `renderer.py` | Canvas rendering (snake, food, obstacles, HUD) |
+| `renderer.py` | Canvas rendering (snake, food, obstacles, HUD, grid lines) |
+| `game_logic.py` | Collision detection functions |
 
 ### Grid System
 
@@ -85,12 +88,21 @@ A local desktop snake game using Python's Tkinter library with:
 
 ### Rendering
 
-- Snake: green connected rectangles
-- Food: red square
-- Obstacles: gray/brown squares
+- Snake: green connected rectangles (#00aa00)
+- Normal food: red square (#ff0000)
+- Special food: yellow square (#ffff00)
+- Obstacles: gray squares (#666666)
 - Grid boundary: subtle grid lines (#222222)
-- HUD: score and level text at fixed pixel coordinates (10, 10)
-- Canvas: `fill=tk.BOTH, expand=True` — fills window in both dimensions
+- HUD: score, level, and goal text at fixed pixel coordinates
+- Canvas: fills window in both dimensions
+
+### Special Food System
+
+- Spawns every ~8 seconds (±1 second real-time) when fewer than 2 exist
+- Visible duration: ~15 squares travel time (tick count adjusted per level to maintain constant real-time)
+- Collision: +30 points, +2 snake growth
+- Position validation: avoids snake body and normal food
+- No immediate replacement on collection (waits for next interval)
 
 ### Level Configuration
 
@@ -107,89 +119,46 @@ A local desktop snake game using Python's Tkinter library with:
 | 9 | 70 | 16 |
 | 10 | 60 | 18 |
 
-### Direction Input
+### Game States
 
-- **Direction input is queued** — only one direction change per tick
-- `pending_direction` stores queued input, applied on next tick
-- Prevents self-collision from rapid key presses
+- **MENU** — Main menu displayed, resize recorded but not applied
+- **PLAYING** — Active gameplay, resize deferred to next tick
+- **GAME_OVER** — Death screen, resize deferred to next tick
+- **LEVEL_COMPLETE** — "Press R for Next Level" shown, grid resize applied
 
 ## Testing Decisions
 
+Test external behavior only (not internal implementation details).
+
 Priority modules for tests:
 - `snake.py` — movement, growth, self-collision
-- `food.py` — spawn location not on snake
+- `food.py` — spawn location validation, normal and special food
 - `obstacle.py` — placement away from snake
-- `test_grid_resize.py` — window resize behavior
-
-Test external behavior only (not internal state).
+- `game.py` — state transitions, scoring, special food timing
+- `renderer.py` — rendering correctness
 
 ## Out of Scope
 
 - Sound/audio
 - High scores / leaderboard
+- Multiple special food types
 - Power-ups
 - Multiple snake skins
 - Network/multiplayer
 - Persisting window size across sessions
 - HUD scaling
 
-## Features Implemented
+## Further Notes
 
-### Feature #19 — Special Food (Bonus Food)
+### Bug Fixes History
 
-**Problem:** Only one food type existed (10 points, +1 growth). Players wanted bonus food for extra challenge and rewards.
+- **#9**: Game over showed no feedback — added death_cause to show collision type
+- **#11**: Self-collision from rapid key presses — added direction queue system
+- **#12**: Wall boundaries invisible — added grid line rendering
+- **#14**: Grid never shrunk when window smaller — added contraction logic
+- **#15**: Grid height not tracked during resize — added target_canvas_height
+- **#16**: Grid reset to 20x20 after game over — show_menu() now adapts to window
 
-**Solution:** Added a second food type with different behavior:
-- Spawns every ~8 seconds (±1 second real-time)
-- Yellow colored (same size as normal food)
-- Visible for ~15 squares of travel time (tick count adjusted per level for constant real-time)
-- Maximum 2 on board simultaneously
-- +30 points and +2 snake growth when collected
-- Does not spawn on same position as normal food or snake
-- When collected, next spawn waits for normal 8s interval (no immediate replacement)
+### Feature History
 
----
-
-## Historical Bug Fixes
-
-### Bug Fix #9 — Game ends abruptly without feedback
-
-**Problem:** Game over screen showed no information about what caused the death.
-
-**Fix:** Added `death_cause` to Game class. `_render_game_over()` now shows collision cause ("You hit the wall!", "You hit yourself!", "You hit an obstacle!").
-
-### Bug Fix #11 — Self-collision from rapid key presses
-
-**Problem:** Rapid direction key presses caused snake to turn into its own body.
-
-**Fix:** Queued direction system — `pending_direction` stores one queued input per tick.
-
-### Bug Fix #12 — Play area boundary invisible
-
-**Problem:** Black background extended beyond visible grid, players couldn't see wall boundaries.
-
-**Fix:** Added `_render_grid_boundary()` to Renderer — draws subtle grid lines (#222222) at cell boundaries.
-
-### Bug Fix #14 — Grid overflow when resizing smaller on level complete
-
-**Problem:** Grid expanded but never contracted when resizing smaller.
-
-**Fix:** Added `elif` branches in `_expand_grid_if_needed()` to handle shrinking with minimum 20-cell constraint.
-
-### Bug Fix #15 — Grid height not tracked during resize
-
-**Problem:** Only `target_canvas_width` was tracked, height changes were ignored.
-
-**Fix:** Added `target_canvas_height` tracking and updated `_expand_grid_if_needed()` to handle both dimensions.
-
-### Bug Fix #16 — Grid resets to default after game over
-
-**Problem:** Returning to menu hard-reset grid to 20x20, ignoring window size.
-
-**Fix:** `show_menu()` now calls `_expand_grid_if_needed()` instead of hard-resetting.
-
-### Snake Spawn Self-Collision Fix
-
-**Problem:** Snake spawned at center pointing left, immediately colliding with its own body.
-
-**Fix:** Snake now spawns pointing RIGHT to prevent immediate self-collision.
+- **#19**: Special Food — added bonus food with timed spawn, yellow color, 30pts/+2 growth
