@@ -119,14 +119,16 @@ Test external behavior only (not internal state).
 
 1. As a player, I want the play area to fill my window when I resize, so that I can use my full screen
 2. As a player, I want the grid to expand in both directions (width and height), so that the play area fills the window fully
-3. As a player, I want the minimum grid size to be set when I start a level, so that the minimum is based on my current window size
-4. As a player, I want the minimum grid size to be updated when I resize on the level complete screen, so that the next level adapts to my window
-5. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments (level start, level complete)
-6. As a player, I want the minimum to reset when starting a new game from the menu, so that each session starts fresh
-7. As a player, I want restarts within a level to keep the current minimum, so that I can retry without the grid changing
-8. As a player, I want the HUD to stay visible and readable, so that I can always see score and level
-9. As a player, I want the snake to start at a random position when the grid expands, so that gameplay feels fresh each level
-10. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
+3. As a player, I want the grid to shrink in both directions when resizing smaller, so that gameplay stays within canvas bounds
+4. As a player, I want the minimum grid size to be set when I start a level, so that the minimum is based on my current window size
+5. As a player, I want the minimum grid size to be updated when I resize on the level complete screen, so that the next level adapts to my window
+6. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments (level start, level complete)
+7. As a player, I want the minimum to reset when starting a new game from the menu, so that each session starts fresh
+8. As a player, I want restarts within a level to keep the current minimum, so that I can retry without the grid changing
+9. As a player, I want the HUD to stay visible and readable, so that I can always see score and level
+10. As a player, I want the snake to start at a random position when the grid expands, so that gameplay feels fresh each level
+11. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
+12. As a player, I want a minimum grid size of 20 cells in each dimension, so that the game never becomes unplayable on small windows
 
 **Implementation Decisions:**
 
@@ -137,10 +139,11 @@ Test external behavior only (not internal state).
 - No maximum grid size
 
 **Resize Mechanism:**
-- `<Configure>` event on root window records `target_canvas_width` — nothing else
-- At the start of each `_game_loop()` tick, `_expand_grid_if_needed()` checks if `target_canvas_width` would produce a larger grid
-- If larger, grid width is updated and canvas is resized
-- Grid only expands, never shrinks
+- `<Configure>` event on root window records `target_canvas_width` AND `target_canvas_height` — nothing else
+- At the start of each `_game_loop()` tick, `_expand_grid_if_needed()` checks if `target_canvas_width`/`target_canvas_height` would produce a larger grid
+- If larger, grid dimensions are updated and canvas is resized
+- Grid **expands AND shrinks** (with minimum constraint of 20 cells in each dimension)
+- In `LEVEL_COMPLETE` state, `_expand_grid_if_needed()` is called in `_render_level_complete()` to handle resize at that checkpoint
 
 **Snake Start Position:**
 - `Snake._reset()` spawns snake at a random position within valid grid cells, pointing LEFT
@@ -159,7 +162,6 @@ Test external behavior only (not internal state).
 - `LEVEL_COMPLETE`: `_expand_grid_if_needed()` called in `_render_level_complete()`
 
 **Out of Scope:**
-- Shrinking the grid (grid only expands, never shrinks)
 - Persisting window size across sessions
 - Scaling the HUD (HUD stays same pixel size regardless of grid)
 - Changing cell_size from 20
@@ -182,3 +184,26 @@ Test external behavior only (not internal state).
 - "You hit the wall!"
 - "You hit an obstacle!"
 - "You hit yourself!"
+
+---
+
+## Bug Fix #14 - Grid overflow when resizing smaller on level complete screen
+
+**Problem:** When resizing the window smaller on the level complete screen, the grid would overflow beyond canvas boundaries.
+
+**Root cause:** The resize handler only handled expanding the grid (`new_width > grid.width`), not shrinking it.
+
+**Fix:** Added elif branches to handle `new_width < grid.width` and `new_height < grid.height` cases, with minimum constraint of 20 cells in each dimension.
+
+---
+
+## Bug Fix #15 - Grid height not tracked during resize causing wall mispositioning
+
+**Problem:** When window was resized taller, grid height was not updated, causing walls to remain at wrong position.
+
+**Root cause:** Regression from simplifying grid resize to use a single `target_canvas_width` variable — code only tracked width changes, not height.
+
+**Fix:** 
+- Added `target_canvas_height` attribute to Game class
+- Updated `_on_resize()` to track both width and height
+- Updated `_expand_grid_if_needed()` to expand/contract grid height when needed

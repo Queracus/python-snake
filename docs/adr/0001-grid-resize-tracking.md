@@ -1,48 +1,62 @@
-# ADR 0001: Grid Resize Tracking Both Width and Height
+# ADR 0001: Dual-Width-Height Resize Tracking Pattern
 
-## Status
-
-Accepted
+**Date:** 2026-05-10
+**Status:** Accepted
 
 ## Context
 
-When the game window is resized, the grid needs to expand to fill the available space. A regression was introduced when the grid resize logic was simplified to only track `target_canvas_width`, ignoring height changes entirely.
-
-This caused walls to remain at incorrect positions when the window was resized taller, because the grid height was never updated to match the new window dimensions.
+When implementing Enhancement #12 (dynamic grid resizing), an initial simplification tracked only `target_canvas_width`, ignoring window height changes. This caused Bug #15 where resizing the window taller left `grid.height` stale, mispositioning walls.
 
 ## Decision
 
-We will track both `target_canvas_width` AND `target_canvas_height` during resize events:
+Track **both** `target_canvas_width` and `target_canvas_height` independently:
 
-1. **Game class** will maintain two target variables:
-   - `target_canvas_width` - the target canvas width from resize events
-   - `target_canvas_height` - the target canvas height from resize events
+```python
+self.target_canvas_width = 400
+self.target_canvas_height = 400
 
-2. **`_on_resize()` method** will update both variables:
-   ```python
-   self.target_canvas_width = event.width
-   self.target_canvas_height = event.height
-   ```
+def _on_resize(self, event):
+    if event.width == 1 and event.height == 1:
+        return
+    self.target_canvas_width = event.width
+    self.target_canvas_height = event.height
 
-3. **`_expand_grid_if_needed()` method** will expand grid in both dimensions:
-   - Expand grid width when window gets wider
-   - Expand grid height when window gets taller
-   - Contract grid in either dimension if window shrinks (minimum 20 cells)
-
-4. **`show_menu()` method** will reset both dimensions to default (400x400)
+def _expand_grid_if_needed(self):
+    new_width = self.target_canvas_width // self.grid.cell_size
+    new_height = self.target_canvas_height // self.grid.cell_size
+    if new_width > self.grid.width:
+        self.grid.width = new_width
+        self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+    elif new_width < self.grid.width and new_width >= 20:
+        self.grid.width = new_width
+        self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+    if new_height > self.grid.height:
+        self.grid.height = new_height
+        self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+    elif new_height < self.grid.height and new_height >= 20:
+        self.grid.height = new_height
+        self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+```
 
 ## Consequences
 
-### Positive
+**Positive:**
+- Grid adapts to window resizing in **both dimensions independently**
+- Avoids regression where height changes are silently ignored
+- Clear separation: resize event only records targets, expansion logic applies them
 
-- Grid correctly expands in both dimensions when window is resized
-- Walls render at correct positions (window edges)
-- Consistent behavior for width and height
+**Negative:**
+- Two variables instead of one — slightly more cognitive overhead
+- `_expand_grid_if_needed()` must handle both width and height branches
 
-### Negative
+## Alternatives Considered
 
-- Slightly more code to maintain (two variables instead of one)
+1. **Single `target_canvas_width` only** — rejected; causes height staleness bug (#15)
+2. **Tuple `(target_width, target_height)`** — equivalent but less readable in attribute access
+3. **Resize event directly modifies grid** — rejected; violates deferred resize principle (resizes only at safe moments)
 
-## Related Issues
+## Notes
 
-- GitHub Issue #15: Bug: Grid height not tracked during resize causing wall mispositioning
+- The `if event.width == 1 and event.height == 1: return` guard filters spurious Configure events from Tkinter initialization
+- Minimum grid size enforced at 20 cells per dimension to keep gameplay playable
+- `_expand_grid_if_needed()` called at: level start, each game loop tick, and level complete render
