@@ -6,7 +6,7 @@ Core domain for python-snake.
 
 - **Snake** — the player-controlled snake
 - **Food** — collectible items that grow the snake
-- **Grid** — the game board (cell_size=20px fixed; width/height in cells adjusts to window size, expands AND contracts with minimum 20x20)
+- **Grid** — the game board (cell_size=20px fixed; width/height in cells adjusts to window size, always matches window — never resets to defaults)
 - **Score** — points earned from collecting food
 - **Level** — difficulty tier (1-10)
 - **Obstacle** — static blocks that kill the snake on collision

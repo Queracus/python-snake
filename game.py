@@ -105,11 +105,7 @@ class Game:
     def show_menu(self):
         from menu import create_menu
 
-        self.target_canvas_width = 400
-        self.target_canvas_height = 400
-        self.grid.width = 20
-        self.grid.height = 20
-        self.canvas.config(width=400, height=400)
+        self._expand_grid_if_needed()
         self.canvas.pack_forget()
         self.menu = create_menu(self.root, self.on_start_game)
         self.menu.show()

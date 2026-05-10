@@ -123,7 +123,7 @@ Test external behavior only (not internal state).
 4. As a player, I want the minimum grid size to be set when I start a level, so that the minimum is based on my current window size
 5. As a player, I want the minimum grid size to be updated when I resize on the level complete screen, so that the next level adapts to my window
 6. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments (level start, level complete)
-7. As a player, I want the minimum to reset when starting a new game from the menu, so that each session starts fresh
+7. As a player, I want starting a new game to use my current window size, so that the game adapts to my setup
 8. As a player, I want restarts within a level to keep the current minimum, so that I can retry without the grid changing
 9. As a player, I want the HUD to stay visible and readable, so that I can always see score and level
 10. As a player, I want the snake to start at a random position when the grid expands, so that gameplay feels fresh each level
@@ -184,6 +184,18 @@ Test external behavior only (not internal state).
 - "You hit the wall!"
 - "You hit an obstacle!"
 - "You hit yourself!"
+
+---
+
+## Bug Fix #16 - Grid resets to default after game over instead of respecting window size
+
+**Problem:** When a player resized the window to be larger, played the game, then got game over and returned to the menu, the grid/walls would reset to default 20x20 instead of respecting the current window size. The window stayed enlarged but the playable area shrunk back.
+
+**Root cause:** `show_menu()` hard-reset `target_canvas_width`, `target_canvas_height`, `grid.width`, and `grid.height` to default values (400x400 canvas, 20x20 grid) instead of adapting to the actual window size.
+
+**Fix:**
+- Removed hard-reset of `target_canvas_width`, `target_canvas_height`, `grid.width`, `grid.height` in `show_menu()`
+- Added `_expand_grid_if_needed()` call in `show_menu()` to adapt grid to current window size
 
 ---
 

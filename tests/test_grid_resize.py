@@ -75,3 +75,28 @@ def test_grid_width_respects_window_width():
     assert game.grid.width >= 40  # 800 // 20 = 40
 
     root.destroy()
+
+
+def test_grid_adapts_to_window_after_game_over():
+    """Grid should adapt to window size after game over, not reset to default."""
+    root = tk.Tk()
+    root.geometry("800x600")
+    root.update()
+
+    game = Game(root)
+    game.show_menu()
+    game.on_start_game(1, game.control_scheme)
+
+    # Simulate window resize
+    game._on_resize(type('Event', (), {'width': 800, 'height': 600})())
+    game._expand_grid_if_needed()
+
+    # Trigger game over
+    game.state = GameState.GAME_OVER
+    game.show_menu()
+
+    # Grid should adapt to window, not reset to 20x20
+    assert game.grid.width >= 40  # 800 // 20 = 40
+    assert game.grid.height >= 30  # 600 // 20 = 30
+
+    root.destroy()
