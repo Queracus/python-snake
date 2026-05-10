@@ -89,6 +89,9 @@ class Game:
         if new_width > self.grid.width:
             self.grid.width = new_width
             self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+        elif new_width < self.grid.width and new_width >= 20:
+            self.grid.width = new_width
+            self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
 
     def show_menu(self):
         from menu import create_menu
