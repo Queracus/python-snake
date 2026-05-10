@@ -58,6 +58,7 @@ class Game:
         self.menu = None
         self.death_cause = ""
         self.target_canvas_width = 400
+        self.target_canvas_height = 400
 
         self._setup_window()
         self._create_canvas()
@@ -83,21 +84,31 @@ class Game:
         if event.width == 1 and event.height == 1:
             return
         self.target_canvas_width = event.width
+        self.target_canvas_height = event.height
 
     def _expand_grid_if_needed(self):
         new_width = self.target_canvas_width // self.grid.cell_size
+        new_height = self.target_canvas_height // self.grid.cell_size
         if new_width > self.grid.width:
             self.grid.width = new_width
             self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
         elif new_width < self.grid.width and new_width >= 20:
             self.grid.width = new_width
             self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+        if new_height > self.grid.height:
+            self.grid.height = new_height
+            self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
+        elif new_height < self.grid.height and new_height >= 20:
+            self.grid.height = new_height
+            self.canvas.config(width=self.grid.canvas_width, height=self.grid.canvas_height)
 
     def show_menu(self):
         from menu import create_menu
 
         self.target_canvas_width = 400
+        self.target_canvas_height = 400
         self.grid.width = 20
+        self.grid.height = 20
         self.canvas.config(width=400, height=400)
         self.canvas.pack_forget()
         self.menu = create_menu(self.root, self.on_start_game)
