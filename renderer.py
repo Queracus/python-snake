@@ -1,7 +1,7 @@
 import tkinter as tk
-from typing import Optional
+from typing import Optional, List
 from snake import Snake, Position
-from food import Food
+from food import Food, SpecialFood
 from obstacles import Obstacles
 
 
@@ -17,11 +17,13 @@ class Renderer:
         self._score_text_id = None
         self._level_text_id = None
 
-    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50):
+    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50, special_foods: Optional[List[SpecialFood]] = None):
         self.clear()
         self._render_grid_boundary()
         self._render_obstacles(obstacles)
         self._render_food(food)
+        if special_foods:
+            self._render_special_foods(special_foods)
         self._render_snake(snake)
         self._render_hud(score, level, goal)
 
@@ -60,6 +62,18 @@ class Renderer:
             fill="#ff0000",
             outline="#ff3333"
         )
+
+    def _render_special_foods(self, special_foods: List[SpecialFood]):
+        for sf in special_foods:
+            x1 = sf.position.x * self.cell_size
+            y1 = sf.position.y * self.cell_size
+            x2 = x1 + self.cell_size - 1
+            y2 = y1 + self.cell_size - 1
+            self.canvas.create_rectangle(
+                x1, y1, x2, y2,
+                fill="#ffff00",
+                outline="#ffff33"
+            )
 
     def _render_obstacles(self, obstacles: Obstacles):
         for pos in obstacles.positions:

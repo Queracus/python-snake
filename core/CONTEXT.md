@@ -5,7 +5,8 @@ Core domain for python-snake.
 ## Domain Language
 
 - **Snake** — the player-controlled snake
-- **Food** — collectible items that grow the snake
+- **Food** — collectible items that grow the snake (+1 growth, 10 points)
+- **Special Food** — timed bonus food (yellow, +2 growth, 30 points, visible ~15 squares travel time)
 - **Grid** — the game board (cell_size=20px fixed; width/height in cells adjusts to window size, always matches window — never resets to defaults)
 - **Score** — points earned from collecting food
 - **Level** — difficulty tier (1-10)

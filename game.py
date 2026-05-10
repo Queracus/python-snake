@@ -1,4 +1,5 @@
 import tkinter as tk
+import random
 from dataclasses import dataclass
 from enum import Enum, auto
 from controls import ControlScheme
@@ -53,6 +54,9 @@ class Game:
         self.snake = None
         self.food = None
         self.obstacles = None
+        self.special_foods = []
+        self.special_food_spawn_timer = 0
+        self.special_food_spawn_interval = 8000
         self.control_scheme = ControlScheme.ARROWS
         self.running = False
         self.menu = None
@@ -131,6 +135,9 @@ class Game:
             grid_height=self.grid.height,
             snake_positions=self.snake.positions
         )
+        self.special_foods = []
+        self.special_food_spawn_timer = 0
+        self.special_food_spawn_interval = 8000
         obstacle_count = LEVEL_CONFIG[level]["obstacles"]
         self.obstacles = Obstacles.create(
             grid_width=self.grid.width,
@@ -161,6 +168,7 @@ class Game:
         self.snake.move()
         self.check_collisions()
         self.handle_eat()
+        self.handle_special_food()
 
         if self.state == GameState.GAME_OVER:
             self._render_game_over()
@@ -179,7 +187,7 @@ class Game:
     def _render(self):
         if self.snake and self.food and self.obstacles:
             goal = LEVEL_CONFIG[self.level]["goal"]
-            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal)
+            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal, self.special_foods)
 
     def _render_game_over(self):
         self.renderer.render_game_over(self.score, self.death_cause)
@@ -258,6 +266,37 @@ class Game:
                 grid_height=self.grid.height,
                 snake_positions=self.snake.positions
             )
+
+    def handle_special_food(self):
+        if not self.snake:
+            return
+
+        self.special_food_spawn_timer += self.tick_rate
+        interval_with_jitter = self.special_food_spawn_interval + random.randint(-1000, 1000)
+
+        if len(self.special_foods) < 2 and self.special_food_spawn_timer >= interval_with_jitter:
+            from food import SpecialFood
+            new_special = SpecialFood.create(
+                grid_width=self.grid.width,
+                grid_height=self.grid.height,
+                snake_positions=self.snake.positions,
+                food_position=self.food.position if self.food else None,
+                tick_rate=self.tick_rate
+            )
+            self.special_foods.append(new_special)
+            self.special_food_spawn_timer = 0
+
+        head = self.snake.positions[0]
+        uneaten_specials = []
+        for sf in self.special_foods:
+            if head.x == sf.position.x and head.y == sf.position.y:
+                self.score += sf.eat()
+                for _ in range(sf.growth_amount):
+                    self.snake.positions.append(self.snake.positions[-1])
+            else:
+                if sf.tick():
+                    uneaten_specials.append(sf)
+        self.special_foods = uneaten_specials
 
     def check_level_complete(self) -> bool:
         goal = LEVEL_CONFIG[self.level]["goal"]
