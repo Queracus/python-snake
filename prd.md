@@ -29,6 +29,7 @@ A local desktop snake game using Python's Tkinter library with:
 5. As a player, I want obstacles that appear per level, so that I have more challenge
 6. As a player, I want to see my current score, so that I know my progress
 7. As a player, I want to see the current level, so that I know my progress
+7b. As a player, I want to see the score goal for the current level, so that I know what target to reach
 8. As a player, I want game over on collision, so that there is a lose condition
 9. As a player, I want to grow the snake by eating food, so that I progress in the game
 10. As a player, I want to control direction with keyboard, so that I can change course
@@ -106,18 +107,18 @@ A local desktop snake game using Python's Tkinter library with:
 
 ### Level Configuration
 
-| Level | Speed (ms) | Obstacles |
-|-------|------------|-----------|
-| 1 | 150 | 0 |
-| 2 | 140 | 2 |
-| 3 | 130 | 4 |
-| 4 | 120 | 6 |
-| 5 | 110 | 8 |
-| 6 | 100 | 10 |
-| 7 | 90 | 12 |
-| 8 | 80 | 14 |
-| 9 | 70 | 16 |
-| 10 | 60 | 18 |
+| Level | Speed (ms) | Obstacles | Score Goal |
+|-------|------------|-----------|------------|
+| 1 | 150 | 0 | 50 |
+| 2 | 140 | 2 | 60 |
+| 3 | 130 | 4 | 70 |
+| 4 | 120 | 6 | 80 |
+| 5 | 110 | 8 | 90 |
+| 6 | 100 | 10 | 100 |
+| 7 | 90 | 12 | 110 |
+| 8 | 80 | 14 | 120 |
+| 9 | 70 | 16 | 130 |
+| 10 | 60 | 18 | 140 |
 
 ### Game States
 
@@ -150,15 +151,28 @@ Priority modules for tests:
 
 ## Further Notes
 
-### Bug Fixes History
+### Implementation History
+
+#### Initial Features (Project Launch)
+
+- **Issue #2**: Basic Window + Canvas — Tkinter setup with 20x20 grid
+- **Issue #3/#4**: Snake + Movement + Food + Eating — Snake entity, direction control, input mapping, food collision and growth
+- **Issue #5**: Collision + Game Over — Game state transitions, collision detection, score on eat
+- **Issue #6**: Main Menu — Tkinter frame UI with Start button, level select (1-10), control scheme toggle
+- **Issue #7**: Levels + Obstacles — 10 levels with increasing speed and obstacles, obstacle collision
+- **Issue #8**: Rendering + Game Loop — Canvas rendering, main game loop with tick, keyboard input
+- **Level Progression**: Added score goal per level (50-140), goal display in HUD, LEVEL_COMPLETE state
+
+#### Bug Fixes
 
 - **#9**: Game over showed no feedback — added death_cause to show collision type
 - **#11**: Self-collision from rapid key presses — added direction queue system
 - **#12**: Wall boundaries invisible — added grid line rendering
+- **Snake Spawn**: Snake spawned pointing left causing immediate self-collision — spawns pointing RIGHT now
 - **#14**: Grid never shrunk when window smaller — added contraction logic
 - **#15**: Grid height not tracked during resize — added target_canvas_height
 - **#16**: Grid reset to 20x20 after game over — show_menu() now adapts to window
 
-### Feature History
+#### Features Added
 
-- **#19**: Special Food — added bonus food with timed spawn, yellow color, 30pts/+2 growth
+- **#19**: Special Food — added bonus food with timed spawn (~8s interval, max 2), yellow color, 30pts/+2 growth, level-adjusted duration
