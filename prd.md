@@ -152,11 +152,23 @@ Test external behavior only (not internal state).
 
 ## Historical Bug Fixes
 
+### Bug Fix #9 — Game ends abruptly without feedback
+
+**Problem:** Game over screen showed no information about what caused the death.
+
+**Fix:** Added `death_cause` to Game class. `_render_game_over()` now shows collision cause ("You hit the wall!", "You hit yourself!", "You hit an obstacle!").
+
 ### Bug Fix #11 — Self-collision from rapid key presses
 
 **Problem:** Rapid direction key presses caused snake to turn into its own body.
 
 **Fix:** Queued direction system — `pending_direction` stores one queued input per tick.
+
+### Bug Fix #12 — Play area boundary invisible
+
+**Problem:** Black background extended beyond visible grid, players couldn't see wall boundaries.
+
+**Fix:** Added `_render_grid_boundary()` to Renderer — draws subtle grid lines (#222222) at cell boundaries.
 
 ### Bug Fix #14 — Grid overflow when resizing smaller on level complete
 
@@ -175,3 +187,9 @@ Test external behavior only (not internal state).
 **Problem:** Returning to menu hard-reset grid to 20x20, ignoring window size.
 
 **Fix:** `show_menu()` now calls `_expand_grid_if_needed()` instead of hard-resetting.
+
+### Snake Spawn Self-Collision Fix
+
+**Problem:** Snake spawned at center pointing left, immediately colliding with its own body.
+
+**Fix:** Snake now spawns pointing RIGHT to prevent immediate self-collision.
