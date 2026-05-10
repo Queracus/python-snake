@@ -17,7 +17,7 @@ class Renderer:
         self._score_text_id = None
         self._level_text_id = None
 
-    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50, special_foods: Optional[List[SpecialFood]] = None):
+    def render(self, snake: Snake, food: Food, obstacles: Obstacles, score: int, level: int, goal: int = 50, special_foods: Optional[List[SpecialFood]] = None, game_mode: str = "level", endless_difficulty: int = 0):
         self.clear()
         self._render_grid_boundary()
         self._render_obstacles(obstacles)
@@ -25,7 +25,7 @@ class Renderer:
         if special_foods:
             self._render_special_foods(special_foods)
         self._render_snake(snake)
-        self._render_hud(score, level, goal)
+        self._render_hud(score, level, goal, game_mode, endless_difficulty)
 
     def _render_grid_boundary(self):
         w = self.canvas.winfo_width()
@@ -87,7 +87,7 @@ class Renderer:
                 outline="#444444"
             )
 
-    def _render_hud(self, score: int, level: int, goal: int = 50):
+    def _render_hud(self, score: int, level: int, goal: int = 50, game_mode: str = "level", endless_difficulty: int = 0):
         self.canvas.create_text(
             10, 10,
             text=f"Score: {score}",
@@ -109,6 +109,14 @@ class Renderer:
             anchor="nw",
             font=("Arial", 10)
         )
+        if game_mode == "endless" and endless_difficulty > 0:
+            self.canvas.create_text(
+                10, 70,
+                text=f"Diff: {endless_difficulty}",
+                fill="#ffaa00",
+                anchor="nw",
+                font=("Arial", 10, "bold")
+            )
 
     def render_game_over(self, score: int, cause: str = ""):
         if cause:

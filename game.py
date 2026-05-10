@@ -51,6 +51,8 @@ class Game:
         self.tick_rate = 150
         self.score = 0
         self.level = 1
+        self.game_mode = "level"
+        self.endless_difficulty = 0
         self.snake = None
         self.food = None
         self.obstacles = None
@@ -117,12 +119,12 @@ class Game:
         self.menu.show()
         self.state = GameState.MENU
 
-    def on_start_game(self, level: int, control_scheme: ControlScheme):
+    def on_start_game(self, level: int, control_scheme: ControlScheme, game_mode: str = "level"):
         self.level = level
         self.control_scheme = control_scheme
-        self.start_level(level)
+        self.start_level(level, game_mode)
 
-    def start_level(self, level: int):
+    def start_level(self, level: int, game_mode: str = "level"):
         from snake import Snake
         from food import Food
         from obstacles import Obstacles
@@ -131,6 +133,8 @@ class Game:
 
         self.level = level
         self.score = 0
+        self.game_mode = game_mode
+        self.endless_difficulty = 0
         self.death_cause = ""
         self.snake = Snake(grid_width=self.grid.width, grid_height=self.grid.height)
         self.food = Food.create(
@@ -141,7 +145,12 @@ class Game:
         self.special_foods = []
         self.special_food_spawn_timer = 0
         self.special_food_spawn_interval = 8000
-        obstacle_count = LEVEL_CONFIG[level]["obstacles"]
+
+        if game_mode == "endless":
+            obstacle_count = 0
+        else:
+            obstacle_count = LEVEL_CONFIG[level]["obstacles"]
+
         self.obstacles = Obstacles.create(
             grid_width=self.grid.width,
             grid_height=self.grid.height,
@@ -177,7 +186,7 @@ class Game:
             self._render_game_over()
             return
 
-        if self.check_level_complete():
+        if self.game_mode == "level" and self.check_level_complete():
             self.state = GameState.LEVEL_COMPLETE
             self._start_countdown()
             return
@@ -189,8 +198,11 @@ class Game:
 
     def _render(self):
         if self.snake and self.food and self.obstacles:
-            goal = LEVEL_CONFIG[self.level]["goal"]
-            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal, self.special_foods)
+            if self.game_mode == "endless":
+                goal = 999
+            else:
+                goal = LEVEL_CONFIG[self.level]["goal"]
+            self.renderer.render(self.snake, self.food, self.obstacles, self.score, self.level, goal, self.special_foods, self.game_mode, self.endless_difficulty)
 
     def _render_game_over(self):
         self.renderer.render_game_over(self.score, self.death_cause)
@@ -295,6 +307,26 @@ class Game:
                 grid_height=self.grid.height,
                 snake_positions=self.snake.positions
             )
+            if self.game_mode == "endless":
+                self._update_endless_difficulty()
+
+    def _update_endless_difficulty(self):
+        new_difficulty = self.score // 80
+        if new_difficulty > self.endless_difficulty:
+            self.endless_difficulty = new_difficulty
+            self._apply_endless_difficulty()
+
+    def _apply_endless_difficulty(self):
+        from obstacles import Obstacles
+        obstacle_count = self.endless_difficulty * 2
+        self.obstacles = Obstacles.create(
+            grid_width=self.grid.width,
+            grid_height=self.grid.height,
+            count=obstacle_count,
+            snake_positions=self.snake.positions
+        )
+        new_tick = 150 - (self.endless_difficulty * 10)
+        self.tick_rate = max(new_tick, 60)
 
     def handle_special_food(self):
         if not self.snake:
