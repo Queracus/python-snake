@@ -1,9 +1,11 @@
+# PRD: Python Snake Game
+
 ## Problem Statement
 
 The user wants an intermediate-level Snake game with a local Tkinter GUI. Key requirements:
 - 10 levels with increasing difficulty (speed + obstacles)
 - Level jump from menu (start at any level 1-10)
-- Resizable window with fixed game area
+- Resizable window with dynamic play area that fills the window
 - Controls: Arrow keys OR WASD (selectable)
 - No sound
 
@@ -13,78 +15,103 @@ A local desktop snake game using Python's Tkinter library with:
 - Main menu for Start and Level Select
 - 10 difficulty levels with increasing speed and obstacles
 - Keyboard control schemes (arrows or WASD)
-- Resizable window, fixed game board
+- Resizable window with play area that adapts to window size (expands AND contracts)
 
 ## User Stories
+
+### Core Game
 
 1. As a player, I want a main menu with Start button, so that I can begin playing
 2. As a player, I want to jump to any level (1-10), so that I can test difficulty
 3. As a player, I want to choose between Arrow keys and WASD controls, so that I can use my preferred scheme
-4. As a player, I want the window to be resizable, so that it fits my screen
-5. As a player, I want the game area to stay fixed size, so that gameplay is consistent
-6. As a player, I want 10 levels with increasing speed, so that the game gets harder
-7. As a player, I want obstacles that appear per level, so that I have more challenge
-8. As a player, I want to see my current score, so that I know my progress
-9. As a player, I want to see the current level, so that I know my progress
-10. As a player, I want game over on collision, so that there is a lose condition
-11. As a player, I want to grow the snake by eating food, so that I progress in the game
-12. As a player, I want to control direction with arrow keys, so that I can play
-13. As a player, I want to control direction with WASD, so that I can play
-14. As a player, I want to see the snake rendered on screen, so that I can play
-15. As a player, I want to see food rendered on screen, so that I know where to move
-16. As a player, I want to see obstacles rendered on screen, so that I can avoid them
-17. As a player, I want the snake to move automatically, so that gameplay is continuous
-18. As a player, I want to control direction with keyboard, so that I can change course
+4. As a player, I want 10 levels with increasing speed, so that the game gets harder
+5. As a player, I want obstacles that appear per level, so that I have more challenge
+6. As a player, I want to see my current score, so that I know my progress
+7. As a player, I want to see the current level, so that I know my progress
+8. As a player, I want game over on collision, so that there is a lose condition
+9. As a player, I want to grow the snake by eating food, so that I progress in the game
+10. As a player, I want to control direction with keyboard, so that I can change course
+11. As a player, I want to see the snake, food, and obstacles rendered, so that I can play
+12. As a player, I want to see why I died, so that I understand my mistakes
+
+### Window Resizing
+
+13. As a player, I want the play area to always match my window size, so that gameplay fills the entire window
+14. As a player, I want the grid to expand in both directions when resizing larger, so that the play area fills the window
+15. As a player, I want the grid to shrink in both directions when resizing smaller, so that gameplay stays within bounds
+16. As a player, I want a minimum grid size of 20 cells in each dimension, so that the game never becomes unplayable
+17. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
+18. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments
+
+## Game States
+
+- **MENU** — Main menu displayed, resize recorded but not applied
+- **PLAYING** — Active gameplay, resize deferred to next tick
+- **GAME_OVER** — Death screen, resize deferred to next tick
+- **LEVEL_COMPLETE** — "Press R for Next Level" shown, `_expand_grid_if_needed()` called here
 
 ## Implementation Decisions
 
-**Modules:**
-- `main.py` — Tkinter root window, app initialization
-- `menu.py` — Main menu UI (Start button, Level Select, Control scheme)
-- `game.py` — Game canvas, main loop, game state management
-- `snake.py` — Snake entity (position, movement, growth, self-collision)
-- `food.py` — Food entity (random placement, collision detection)
-- `obstacle.py` — Obstacle entity (per-level generation, collision)
-- `controls.py` — Input handling (key binding for arrows + WASD)
-- `renderer.py` — Canvas rendering (snake, food, obstacles, score display)
-- `game_loop.py` — Main game loop with tick timing
+### Modules
 
-**Rendering System:**
-- Snake drawn as connected rectangles (green segments)
-- Food drawn as red square
-- Obstacles drawn as gray/brown squares
-- Score displayed as text on canvas
-- Level displayed as text on canvas
-- Grid uses cell_size=20 pixels per cell
-- Canvas width/height = grid_width * cell_size, grid_height * cell_size
-- **Grid boundary drawn as subtle grid lines (#222222)** so players can identify wall positions
+| Module | Responsibility |
+|--------|----------------|
+| `main.py` | Tkinter root window, app initialization |
+| `menu.py` | Main menu UI (Start button, Level Select, Control scheme) |
+| `game.py` | Game canvas, main loop, game state, resize handling |
+| `snake.py` | Snake entity (position, movement, growth, self-collision) |
+| `food.py` | Food entity (random placement, collision detection) |
+| `obstacle.py` | Obstacle entity (per-level generation, collision) |
+| `controls.py` | Input handling (key binding for arrows + WASD) |
+| `renderer.py` | Canvas rendering (snake, food, obstacles, HUD) |
 
-**Main Game Loop:**
-- Uses `root.after(tick_rate, callback)` for tick-based animation
-- Each tick: move snake → check collisions → handle eat → render
-- Initial tick rate: 150ms (level 1)
-- Tick rate decreases with level (60ms at level 10)
-- **Direction input is queued** - only one direction change per tick to prevent self-collision
-- Rapid key presses before a tick are stored in `pending_direction` and applied on next tick
+### Grid System
 
-**Level Configuration:**
-- Level 1: 150ms tick, 0 obstacles
-- Level 2: 140ms tick, 2 obstacles
-- Level 3: 130ms tick, 4 obstacles
-- Level 4: 120ms tick, 6 obstacles
-- Level 5: 110ms tick, 8 obstacles
-- Level 6: 100ms tick, 10 obstacles
-- Level 7: 90ms tick, 12 obstacles
-- Level 8: 80ms tick, 14 obstacles
-- Level 9: 70ms tick, 16 obstacles
-- Level 10: 60ms tick, 18 obstacles
+- **cell_size = 20px** — fixed, never changes
+- **grid.width, grid.height** — in cells, adjusts to window size
+- **Canvas dimensions** = grid.width * cell_size, grid.height * cell_size
+- Grid expands AND contracts to match window size
+- Minimum: 20 cells per dimension (enforced even if window is very small)
+- Maximum: unlimited (grid fills window)
 
-**Technical:**
-- Grid: 20x20 cells (fixed), cell size adjusts to fit window
-- Game states: MENU, PLAYING, GAME_OVER
-- Snake starts at length 3
-- Food respawns on eaten
-- Obstacles placed randomly but not on snake start position
+### Resize Mechanism
+
+1. `<Configure>` event on root window records `target_canvas_width` AND `target_canvas_height`
+2. `_expand_grid_if_needed()` called at safe moments:
+   - Each game loop tick (during PLAYING, GAME_OVER)
+   - LEVEL_COMPLETE render
+   - MENU show
+3. Only updates grid if new size differs; minimum 20 cells enforced
+
+### Rendering
+
+- Snake: green connected rectangles
+- Food: red square
+- Obstacles: gray/brown squares
+- Grid boundary: subtle grid lines (#222222)
+- HUD: score and level text at fixed pixel coordinates (10, 10)
+- Canvas: `fill=tk.BOTH, expand=True` — fills window in both dimensions
+
+### Level Configuration
+
+| Level | Speed (ms) | Obstacles |
+|-------|------------|-----------|
+| 1 | 150 | 0 |
+| 2 | 140 | 2 |
+| 3 | 130 | 4 |
+| 4 | 120 | 6 |
+| 5 | 110 | 8 |
+| 6 | 100 | 10 |
+| 7 | 90 | 12 |
+| 8 | 80 | 14 |
+| 9 | 70 | 16 |
+| 10 | 60 | 18 |
+
+### Direction Input
+
+- **Direction input is queued** — only one direction change per tick
+- `pending_direction` stores queued input, applied on next tick
+- Prevents self-collision from rapid key presses
 
 ## Testing Decisions
 
@@ -92,6 +119,7 @@ Priority modules for tests:
 - `snake.py` — movement, growth, self-collision
 - `food.py` — spawn location not on snake
 - `obstacle.py` — placement away from snake
+- `test_grid_resize.py` — window resize behavior
 
 Test external behavior only (not internal state).
 
@@ -102,120 +130,31 @@ Test external behavior only (not internal state).
 - Power-ups
 - Multiple snake skins
 - Network/multiplayer
-
-## Further Notes
-
-- Level jump starts at selected level, same starting snake size
-- Controls selectable in menu, persists for game session
-- Resizable window via Tkinter geometry manager (fixed canvas content)
-
-## Enhancement #12 - Dynamic Grid Resizing
-
-**Problem:** When the window is resized, the play area remains fixed (20x20 cells, 400x400 canvas), leaving black bars on the right and bottom. Players want the game area to fill the window.
-
-**Solution:** The grid expands to fill the window. Cell size stays fixed at 20px. Grid width/height (in cells) adjusts based on window size. Minimum grid size is determined by window size at level start and level complete.
-
-**User Stories:**
-
-1. As a player, I want the play area to fill my window when I resize, so that I can use my full screen
-2. As a player, I want the grid to expand in both directions (width and height), so that the play area fills the window fully
-3. As a player, I want the grid to shrink in both directions when resizing smaller, so that gameplay stays within canvas bounds
-4. As a player, I want the minimum grid size to be set when I start a level, so that the minimum is based on my current window size
-5. As a player, I want the minimum grid size to be updated when I resize on the level complete screen, so that the next level adapts to my window
-6. As a player, I want resizing during gameplay to be deferred, so that the grid only resizes at safe moments (level start, level complete)
-7. As a player, I want starting a new game to use my current window size, so that the game adapts to my setup
-8. As a player, I want restarts within a level to keep the current minimum, so that I can retry without the grid changing
-9. As a player, I want the HUD to stay visible and readable, so that I can always see score and level
-10. As a player, I want the snake to start at a random position when the grid expands, so that gameplay feels fresh each level
-11. As a player, I want grid resizing to have no maximum limit, so that large displays can use the full screen
-12. As a player, I want a minimum grid size of 20 cells in each dimension, so that the game never becomes unplayable on small windows
-
-**Implementation Decisions:**
-
-**Grid Resizing:**
-- `Grid` dataclass holds current `width` and `height` (in cells), plus fixed `cell_size=20`
-- `Grid.canvas_width` and `Grid.canvas_height` derive from `width * cell_size` and `height * cell_size`
-- Grid expands in width direction to fill window — cell count scales with window width
-- No maximum grid size
-
-**Resize Mechanism:**
-- `<Configure>` event on root window records `target_canvas_width` AND `target_canvas_height` — nothing else
-- At the start of each `_game_loop()` tick, `_expand_grid_if_needed()` checks if `target_canvas_width`/`target_canvas_height` would produce a larger grid
-- If larger, grid dimensions are updated and canvas is resized
-- Grid **expands AND shrinks** (with minimum constraint of 20 cells in each dimension)
-- In `LEVEL_COMPLETE` state, `_expand_grid_if_needed()` is called in `_render_level_complete()` to handle resize at that checkpoint
-
-**Snake Start Position:**
-- `Snake._reset()` spawns snake at a random position within valid grid cells, pointing LEFT
-- `Obstacles.create` uses the current grid dimensions when spawning
-- `Food.create` uses the current grid dimensions when spawning
-
-**Rendering:**
-- Canvas uses `fill=tk.BOTH, expand=True` — fills window in both dimensions
-- HUD position stays fixed at pixel coordinates (10, 10) etc., not tied to grid
-- `Renderer` reads canvas dimensions via `canvas.winfo_width()` each render
-
-**Game States affected:**
-- `MENU`: resize recorded but not applied
-- `PLAYING`: resize deferred, applied at start of next tick via `_expand_grid_if_needed()`
-- `GAME_OVER`: same as PLAYING (deferred via tick)
-- `LEVEL_COMPLETE`: `_expand_grid_if_needed()` called in `_render_level_complete()`
-
-**Out of Scope:**
 - Persisting window size across sessions
-- Scaling the HUD (HUD stays same pixel size regardless of grid)
-- Changing cell_size from 20
+- HUD scaling
 
----
+## Historical Bug Fixes
 
-## Bug Fix #11 - Self-collision from rapid key presses
+### Bug Fix #11 — Self-collision from rapid key presses
 
-**Problem:** When player presses two direction keys quickly before a tick (e.g., DOWN then LEFT), the snake turns into its own body.
+**Problem:** Rapid direction key presses caused snake to turn into its own body.
 
-**Fix:** Implemented queued direction system in `snake.py`:
-- `pending_direction` stores queued input
-- Only one direction change processed per tick
+**Fix:** Queued direction system — `pending_direction` stores one queued input per tick.
 
-## Enhancement #9 - Better collision feedback
+### Bug Fix #14 — Grid overflow when resizing smaller on level complete
 
-**Problem:** Game shows generic "GAME OVER" without explaining why.
+**Problem:** Grid expanded but never contracted when resizing smaller.
 
-**Fix:** Display cause of death:
-- "You hit the wall!"
-- "You hit an obstacle!"
-- "You hit yourself!"
+**Fix:** Added `elif` branches in `_expand_grid_if_needed()` to handle shrinking with minimum 20-cell constraint.
 
----
+### Bug Fix #15 — Grid height not tracked during resize
 
-## Bug Fix #16 - Grid resets to default after game over instead of respecting window size
+**Problem:** Only `target_canvas_width` was tracked, height changes were ignored.
 
-**Problem:** When a player resized the window to be larger, played the game, then got game over and returned to the menu, the grid/walls would reset to default 20x20 instead of respecting the current window size. The window stayed enlarged but the playable area shrunk back.
+**Fix:** Added `target_canvas_height` tracking and updated `_expand_grid_if_needed()` to handle both dimensions.
 
-**Root cause:** `show_menu()` hard-reset `target_canvas_width`, `target_canvas_height`, `grid.width`, and `grid.height` to default values (400x400 canvas, 20x20 grid) instead of adapting to the actual window size.
+### Bug Fix #16 — Grid resets to default after game over
 
-**Fix:**
-- Removed hard-reset of `target_canvas_width`, `target_canvas_height`, `grid.width`, `grid.height` in `show_menu()`
-- Added `_expand_grid_if_needed()` call in `show_menu()` to adapt grid to current window size
+**Problem:** Returning to menu hard-reset grid to 20x20, ignoring window size.
 
----
-
-## Bug Fix #14 - Grid overflow when resizing smaller on level complete screen
-
-**Problem:** When resizing the window smaller on the level complete screen, the grid would overflow beyond canvas boundaries.
-
-**Root cause:** The resize handler only handled expanding the grid (`new_width > grid.width`), not shrinking it.
-
-**Fix:** Added elif branches to handle `new_width < grid.width` and `new_height < grid.height` cases, with minimum constraint of 20 cells in each dimension.
-
----
-
-## Bug Fix #15 - Grid height not tracked during resize causing wall mispositioning
-
-**Problem:** When window was resized taller, grid height was not updated, causing walls to remain at wrong position.
-
-**Root cause:** Regression from simplifying grid resize to use a single `target_canvas_width` variable — code only tracked width changes, not height.
-
-**Fix:** 
-- Added `target_canvas_height` attribute to Game class
-- Updated `_on_resize()` to track both width and height
-- Updated `_expand_grid_if_needed()` to expand/contract grid height when needed
+**Fix:** `show_menu()` now calls `_expand_grid_if_needed()` instead of hard-resetting.

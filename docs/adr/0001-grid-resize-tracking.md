@@ -59,4 +59,4 @@ def _expand_grid_if_needed(self):
 
 - The `if event.width == 1 and event.height == 1: return` guard filters spurious Configure events from Tkinter initialization
 - Minimum grid size enforced at 20 cells per dimension to keep gameplay playable
-- `_expand_grid_if_needed()` called at: level start, each game loop tick, and level complete render
+- `_expand_grid_if_needed()` called at: level start, each game loop tick, level complete render, and menu show (Bug Fix #16)
